@@ -1,0 +1,83 @@
+﻿<Window x:Class="KinectWPFGUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kinect Status" Height="800" Width="680">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        
+        <ListBox x:Name="lboxEvents"
+                 Grid.Row="0"
+                 Grid.Column="0"
+                 Margin="2"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Stretch"  />
+
+        <Grid Grid.Row="1"
+              Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="chkboxShowTestData"
+                          Checked="chkboxShowTestData_Checked"
+                          Unchecked="chkboxShowTestData_Unchecked"
+                          Content="Show Test Data"
+                          Margin="2"
+                          VerticalAlignment="Center"/>
+
+                <CheckBox x:Name="chkboxSeated"
+                          Checked="chkboxSeated_Checked"
+                          Unchecked="chkboxSeated_Unchecked"
+                          Content="Sitting"
+                          IsChecked="True"
+                          Margin="2"
+                          VerticalAlignment="Center"/>
+
+                <CheckBox x:Name="chkboxClose"
+                          Checked="chkboxClose_Checked"
+                          Unchecked="chkboxClose_Unchecked"
+                          Content="Close Range"
+                          IsChecked="True"
+                          Margin="2"
+                          VerticalAlignment="Center"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal"
+                        Grid.Column="1"
+                        HorizontalAlignment="Right">            
+                <Button x:Name="btnClose"
+                        Margin="2"
+                        Width="85"
+                        Click="btnClose_Click_1"
+                        Content="Close" />
+            </StackPanel>
+        </Grid>
+
+        <TabControl Grid.Row="2"
+                    Grid.Column="0">
+            <TabItem Header="Color">
+                <Image x:Name="imgColor"
+                   Grid.Row="2"
+                   Grid.Column="0"
+                   Height="480"
+                   Width="640" />
+            </TabItem>
+            <TabItem Header="Depth">
+                <Image x:Name="imgDepth"
+                   Grid.Row="2"
+                   Grid.Column="0"
+                   Height="480"
+                   Width="640" />
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

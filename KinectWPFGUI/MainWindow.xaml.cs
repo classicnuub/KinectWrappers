@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Configuration;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using KinectEventWrappers;
 using KinectProjectControllers;
 
 namespace KinectWPFGUI
@@ -14,17 +16,10 @@ namespace KinectWPFGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const string MemoryMappedFileName = "kinectData";
-        private const string MutexName = "kinectMutex";
-        private Timer updateTimer;
-        private TimerCallback updateTimerCallback;
-        private MemoryMappedFile mmf;
-        private Mutex mutex;
         private string saveFilePath = @"C:\Code\dataFile.txt";
-        private const long lng = 2458624;
         private WriteableBitmap bmpColor;
         private WriteableBitmap bmpDepth;
-        private long timerTick = 10;
+        private KinectProjectController kProjCtrlr;
 
         //Set true for saving data to a file, showing images, displaying extra data in lboxEvents.
         public bool showTestData;
@@ -38,6 +33,8 @@ namespace KinectWPFGUI
         public MainWindow()
         {
             InitializeComponent();
+
+            kProjCtrlr = new KinectProjectController(new KinectEventWrapper());
 
             //Subscribe to the closing event to handle unmanaged objects (ie. the KinecSensor)
             Closing += MainWindow_Closing;
@@ -54,35 +51,6 @@ namespace KinectWPFGUI
             bmpDepth = new WriteableBitmap(640, 480, 96.0, 96.0, PixelFormats.Bgr32, null);
             imgColor.Source = bmpColor;
             imgDepth.Source = bmpDepth;
-            
-            try
-            {
-                //Create the memory mapped file.
-                mmf = MemoryMappedFile.CreateNew(MemoryMappedFileName, lng);
-                
-                lboxEvents.Items.Add("Created the " + MemoryMappedFileName + " memory mapped file.");
-                bool mutexCreated;
-
-                //Create the Mutex
-                mutex = new Mutex(true, MutexName, out mutexCreated);
-                if (mutexCreated)
-                {
-                    lboxEvents.Items.Add("Created the " + MutexName + " mutex.");
-                    mutex.ReleaseMutex();
-
-                    //Start the timer for polling the KinectSensor data
-                    updateTimerCallback = updateTimer_Callback;
-                    updateTimer = new Timer(updateTimerCallback, null, 0, timerTick);
-                }
-                else
-                {
-                    WriteTolboxEvents("The mutex was not created.  The program will not proceed.");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-            }
         }
 
         //Toggles setting the sensor between close and far
@@ -90,11 +58,11 @@ namespace KinectWPFGUI
         {
             if (closeRange)
             {
-                KinectProjectController.ReceivedRequest(ReceivedRequestEnum.close);
+                kProjCtrlr.ReceivedRequest(ReceivedRequestEnum.close);
             }
             else
             {
-                KinectProjectController.ReceivedRequest(ReceivedRequestEnum.far);
+                kProjCtrlr.ReceivedRequest(ReceivedRequestEnum.far);
             }
         }
 
@@ -103,17 +71,12 @@ namespace KinectWPFGUI
         {
             if (sitting)
             {
-                KinectProjectController.ReceivedRequest(ReceivedRequestEnum.sit);
+                kProjCtrlr.ReceivedRequest(ReceivedRequestEnum.sit);
             }
             else
             {
-                KinectProjectController.ReceivedRequest(ReceivedRequestEnum.stand);
+                kProjCtrlr.ReceivedRequest(ReceivedRequestEnum.stand);
             }
-        }
-
-        private void updateTimer_Callback(Object obj)
-        {
-            WriteMemoryData();
         }
 
         private void btnClose_Click_1(object sender, RoutedEventArgs e)
@@ -123,105 +86,12 @@ namespace KinectWPFGUI
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            KinectProjectController.Close();
-            if (mmf != null)
-            {
-                mmf.Dispose();
-            }
+            kProjCtrlr.Close();
         }
 
         private void LogError(Exception ex)
         {
             WriteTolboxEvents(ex.Message);
-        }
-
-        /// <summary>
-        /// Write the KinectData from the KinectEventWrappers object to the MemoryMappedFile
-        /// </summary>
-        private void WriteMemoryData()
-        {
-            try
-            {
-                byte[] response = KinectProjectController.ReceivedRequest("all");
-
-                //Wait for control of the Mutex
-                mutex.WaitOne();
-
-                //Get a stream of the MemoryMappedFile
-                using (MemoryMappedViewStream mmStrm = mmf.CreateViewStream())
-                {
-                    //Write to the MemoryMappedFile
-                    BinaryWriter bWrite = new BinaryWriter(mmStrm);
-                    bWrite.Write(response);
-                }
-
-                //Release the Mutex
-                mutex.ReleaseMutex();
-
-                //For debugging purposes extra information can be sent to the C# GUI to see what is being placed in the MemoryMappedFile
-                if (showTestData == true)
-                {
-                    //Write the file data only if it's the full length data
-                    if (response.Length == 2458624)
-                    {
-                        WriteFileData(response);
-                    }
-
-                    //Enable this method to test data in the C# code.
-                    WriteTestingData();
-                }
-
-                WriteTolboxEvents("Updated memory data. Data length: " + response.Length);
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-            }
-        }
-
-        /// <summary>
-        /// Reads from the MemoryMappedFile and shows the results in the GUI
-        /// </summary>
-        private void WriteTestingData()
-        {
-            byte[] data = new byte[lng];
-
-            //Get the data to display for testing from the memorymappedfile.
-            mutex.WaitOne();
-            using (MemoryMappedViewStream mmStrm = mmf.CreateViewStream())
-            {
-                BinaryReader bRead = new BinaryReader(mmStrm);
-                bRead.Read(data, 0, Convert.ToInt32(lng));
-            }
-            mutex.ReleaseMutex();
-
-            //Get the data to display from a file.
-            //FileInfo fInfo = new FileInfo(saveFilePath);
-
-            //if (!fInfo.Exists)
-            //{
-            //    using (FileStream fStream = fInfo.OpenRead())
-            //    {
-            //        fStream.Read(data, 0, Convert.ToInt32(lng));
-            //    }
-            //}
-
-            byte[] skelData = new byte[1024];
-            byte[] colorData = new byte[1228800];
-            byte[] depthData = new byte[1228800];
-
-            //Display color data in the image
-            Buffer.BlockCopy(data, 0, colorData, 0, colorData.Length);
-            WriteToColorImage(colorData);
-
-            //Display depth data in the image.
-            Buffer.BlockCopy(data, colorData.Length, depthData, 0, depthData.Length);
-            WriteToDepthImage(depthData);
-
-            //Write the skeleton data to the listbox
-            Buffer.BlockCopy(data, 2457600, skelData, 0, 1024);
-            string skelString = System.Text.Encoding.ASCII.GetString(skelData);
-            WriteTolboxEvents(skelString);
         }
 
         private void WriteTolboxEvents(string msg)
@@ -287,13 +157,11 @@ namespace KinectWPFGUI
 
         private void chkboxSeated_Checked(object sender, RoutedEventArgs e)
         {
-            sitting = true;
             SetSitStand();
         }
 
         private void chkboxSeated_Unchecked(object sender, RoutedEventArgs e)
         {
-            sitting = false;
             SetSitStand();
         }
 

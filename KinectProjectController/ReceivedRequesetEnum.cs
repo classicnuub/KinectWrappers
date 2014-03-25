@@ -16,6 +16,7 @@ namespace KinectProjectControllers
         sit = 6,
         stand = 7,
         close = 8,
-        far = 9
+        far = 9,
+        skeleton = 10
     }
 }

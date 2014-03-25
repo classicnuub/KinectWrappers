@@ -35,6 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -94,6 +95,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\KinectEventWrappers\KinectEventWrappers.csproj">
+      <Project>{d4a8544c-b85e-4a66-95ec-e24b640a47a5}</Project>
+      <Name>KinectEventWrappers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\KinectProjectController\KinectProjectController.csproj">
       <Project>{e0e923e6-4c64-48b5-83c6-fc0ae9b35a33}</Project>
       <Name>KinectProjectController</Name>

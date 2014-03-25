@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using KinectWrappers;
+using KinectEventWrappers;
 using Microsoft.Kinect;
 
 //********************************************************************************************************
@@ -18,7 +18,7 @@ namespace KinectEventWrappers
     public delegate void RaiseHand(KinectEventsEnum kinectEvntEnum);
     public delegate void LowerHand(KinectEventsEnum kinectEvntEnum);
 
-    public class KinectEventWrapper
+    public class KinectEventWrapper : IKinectEventWrapper
     {
         #region Declarations
         private KinectSensor objKinectSensor;
@@ -49,7 +49,7 @@ namespace KinectEventWrappers
             {
                 return _colorBitmap;
             }
-            private set
+            set
             {
                 _colorBitmap = value;
 
@@ -65,7 +65,7 @@ namespace KinectEventWrappers
             {
                 return _depthBitmap;
             }
-            private set
+            set
             {
                 _depthBitmap = value;
 

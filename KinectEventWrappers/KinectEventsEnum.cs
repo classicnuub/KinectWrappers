@@ -1,4 +1,4 @@
-﻿namespace KinectWrappers
+﻿namespace KinectEventWrappers
 {
     public enum KinectEventsEnum : int
     {

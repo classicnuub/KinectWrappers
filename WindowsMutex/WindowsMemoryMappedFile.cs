@@ -1,33 +1,41 @@
 ﻿using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
+using SimpleDataSource;
 
-namespace WindowsMemoryMappedFile
+namespace WindowsMemoryMappedFileNS
 {
-    public class WindowsMemoryMappedFile
+    public class WindowsMemoryMappedFile : ISimpleDataSource
     {
+        private bool _requiresLength = true;
+        public bool RequiresLength { get { return _requiresLength; } }
+
         private WindowsMutex mutex;
         private MemoryMappedFile memoryMappedfile;
+        private long memoryLength;
+        private string memoryMappedFileName;
 
-        public WindowsMemoryMappedFile(string mutexName, string memoryMappedFileName, long memoryMappedFileLength)
+        public WindowsMemoryMappedFile(string mutexName, string memoryMappedFileName)
         {
+            this.memoryMappedFileName = memoryMappedFileName;
             mutex = new WindowsMutex(mutexName);
-
-            memoryMappedfile = MemoryMappedFile.CreateNew(memoryMappedFileName, memoryMappedFileLength);
         }
 
-        public void WriteToFile(byte[] Data)
+        public void WriteToDataSource(byte[] Data)
         {
             mutex.LockMutex();
 
             try
             {
-                //Get a stream of the MemoryMappedFile
-                using (MemoryMappedViewStream mmStrm = memoryMappedfile.CreateViewStream())
+                if (!memoryMappedfile.SafeMemoryMappedFileHandle.IsClosed)
                 {
-                    //Write to the MemoryMappedFile
-                    BinaryWriter bWrite = new BinaryWriter(mmStrm);
-                    bWrite.Write(Data);
+                    //Get a stream of the MemoryMappedFile
+                    using (MemoryMappedViewStream mmStrm = memoryMappedfile.CreateViewStream())
+                    {
+                        //Write to the MemoryMappedFile
+                        BinaryWriter bWrite = new BinaryWriter(mmStrm);
+                        bWrite.Write(Data);
+                    }
                 }
             }
             finally
@@ -36,22 +44,51 @@ namespace WindowsMemoryMappedFile
             };
         }
 
-        public byte[] PullDataFromFile(long lengthToRead)
+        public byte[] ReadFromDataSource()
         {
-            byte[] data = new byte[lengthToRead];
+            byte[] data = new byte[memoryLength];
 
             mutex.LockMutex();
 
-            //Get the data to display for testing from the memorymappedfile.
-            using (MemoryMappedViewStream mmStrm = memoryMappedfile.CreateViewStream())
+            if (!memoryMappedfile.SafeMemoryMappedFileHandle.IsClosed)
             {
-                BinaryReader bRead = new BinaryReader(mmStrm);
-                bRead.Read(data, 0, Convert.ToInt32(lengthToRead));
+                //Get the data to display for testing from the memorymappedfile.
+                using (MemoryMappedViewStream mmStrm = memoryMappedfile.CreateViewStream())
+                {
+                    BinaryReader bRead = new BinaryReader(mmStrm);
+                    bRead.Read(data, 0, Convert.ToInt32(memoryLength));
+                }
             }
 
             mutex.ReleaseMutex();
 
             return data;
+        }
+
+        public void SetLength(long length)
+        {
+            memoryLength = length;
+        }
+
+        public bool StartDataSource()
+        {
+            if (memoryLength > 0)
+            {
+                memoryMappedfile = MemoryMappedFile.CreateNew(memoryMappedFileName, memoryLength);
+
+                return true;
+            }
+            else
+                return false;
+        }
+
+        public void Dispose()
+        {
+            if (mutex != null)
+                mutex.Dispose();
+
+            if (memoryMappedfile != null)
+                memoryMappedfile.Dispose();
         }
     }
 }

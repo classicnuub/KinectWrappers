@@ -45,12 +45,6 @@
   <ItemGroup>
     <Compile Include="Controller.cs" />
     <Compile Include="Delegates.cs" />
-    <Compile Include="IKinectProjectController.cs" />
-    <Compile Include="KinectSettings.Designer.cs">
-      <DependentUpon>KinectSettings.settings</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReceivedRequesetEnum.cs" />
   </ItemGroup>
@@ -59,12 +53,10 @@
       <Project>{D4A8544C-B85E-4A66-95EC-E24B640A47A5}</Project>
       <Name>KinectEventWrappers</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="KinectSettings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>KinectSettings.Designer.cs</LastGenOutput>
-    </None>
+    <ProjectReference Include="..\WindowsMutex\WindowsMemoryMappedFile.csproj">
+      <Project>{585d1dcb-e18c-41cf-b1d4-2b389955d55e}</Project>
+      <Name>WindowsMemoryMappedFile</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

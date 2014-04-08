@@ -52,6 +52,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="SampleSimpleDataSource.cs" />
     <Compile Include="TestKinectEventWrapper.cs" />
     <Compile Include="UnitTest1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -64,6 +65,10 @@
     <ProjectReference Include="..\KinectProjectController\KinectProjectController.csproj">
       <Project>{e0e923e6-4c64-48b5-83c6-fc0ae9b35a33}</Project>
       <Name>KinectProjectController</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WindowsMutex\WindowsMemoryMappedFile.csproj">
+      <Project>{585d1dcb-e18c-41cf-b1d4-2b389955d55e}</Project>
+      <Name>WindowsMemoryMappedFile</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>

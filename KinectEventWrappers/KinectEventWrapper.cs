@@ -42,38 +42,68 @@ namespace KinectEventWrappers
         public event EventHandler DepthBitmapChanged;
         public event EventHandler FoundSkeleton;
 
-        private WriteableBitmap _colorBitmap;
-        public WriteableBitmap colorBitmap 
+        public int DepthFrameWidth
         {
             get
             {
-                return _colorBitmap;
-            }
-            set
-            {
-                _colorBitmap = value;
-
-                if (ColorBitmapChanged != null)
-                    ColorBitmapChanged(this, null);
+                if (objKinectSensor != null)
+                    return objKinectSensor.DepthStream.FrameWidth;
+                else
+                    return 0;
             }
         }
-
-        private WriteableBitmap _depthBitmap;
-        public WriteableBitmap depthBitmap 
+        public int DepthFrameHeight
         {
             get
             {
-                return _depthBitmap;
-            }
-            set
-            {
-                _depthBitmap = value;
-
-                if (DepthBitmapChanged != null)
-                    DepthBitmapChanged(this, null);
+                if (objKinectSensor != null)
+                    return objKinectSensor.DepthStream.FrameHeight;
+                else
+                    return 0;
             }
         }
-
+        public int ColorFrameWidth
+        {
+            get
+            {
+                if (objKinectSensor != null)
+                    return objKinectSensor.ColorStream.FrameWidth;
+                else
+                    return 0;
+            }
+        }
+        public int ColorFrameHeight
+        {
+            get
+            {
+                if (objKinectSensor != null)
+                    return objKinectSensor.ColorStream.FrameHeight;
+                else
+                    return 0;
+            }
+        }
+        public int ColorFrameByteLength
+        {
+            get
+            {
+                if (objKinectSensor != null)
+                    return objKinectSensor.ColorStream.FramePixelDataLength;
+                else
+                    return 0;
+            }
+        }
+        public int DepthFrameByteLength
+        {
+            get
+            {
+                if (objKinectSensor != null)
+                    return objKinectSensor.DepthStream.FramePixelDataLength * 4;
+                else
+                    return 0;
+            }
+        }
+        
+        
         public event CrossedArms CrossArms;
         public event UnCrossedArms UnCrossArms;
         public event RaiseHand RightHandRaised;
@@ -106,19 +136,23 @@ namespace KinectEventWrappers
 
                 objKinectSensor.ColorStream.Enable(colorImgFormat);
                 this.colorPixels = new byte[objKinectSensor.ColorStream.FramePixelDataLength];
-                this.colorBitmap = new WriteableBitmap(objKinectSensor.ColorStream.FrameWidth, objKinectSensor.ColorStream.FrameHeight, 96.0, 96.0, PixelFormats.Bgr32, null);
                 objKinectSensor.ColorFrameReady += new EventHandler<ColorImageFrameReadyEventArgs>(objKinectSensor_ColorFrameReady);
 
                 objKinectSensor.DepthStream.Enable(depthImgFormat);
                 objKinectSensor.DepthStream.Range = DepthRange.Near;
                 this.depthPixels = new short[objKinectSensor.DepthStream.FramePixelDataLength];
                 this.depthDisplayPixels = new byte[0];
-                this.depthBitmap = new WriteableBitmap(objKinectSensor.DepthStream.FrameWidth, objKinectSensor.DepthStream.FrameHeight, 96.0, 96.0, PixelFormats.Bgr32, null);
                 objKinectSensor.DepthFrameReady += new EventHandler<DepthImageFrameReadyEventArgs>(objKinectSensor_DepthFrameReady);
 
             }
 
             _skel = new SkeletonWithMapping();
+        }
+
+        public KinectEventWrapper(ColorImageFormat colorFormat, DepthImageFormat depthFormat) : this()
+        {
+            colorImgFormat = colorFormat;
+            depthImgFormat = depthFormat;
         }
 
         ~KinectEventWrapper()
@@ -154,12 +188,15 @@ namespace KinectEventWrappers
             
             if (tmpSkel != null && !blnFoundSkeleton)
             {
-                FoundSkeleton(null, null);
-                blnFoundSkeleton = true;
+                if (FoundSkeleton != null)
+                {
+                    FoundSkeleton(null, null);
+                    blnFoundSkeleton = true;
+                }
             }
 
             //record the skeleton information for polling every saveEventCount number of events.
-            if (eventCountBetweenSaves % saveEventCount == 0)
+            if (eventCountBetweenSaves - saveEventCount == 0)
             {
                 eventCountBetweenSaves = 0;
                 if (tmpSkel != null)
@@ -173,9 +210,9 @@ namespace KinectEventWrappers
             {
                 JointCollection joints = tmpSkel.Joints;
 
-                //I'm being selective in all of the events and only taking tracked events where the type of tracking is Tracked and not Inferred.
+                //This is commented out because it was for testing.  It is being left in code as an example and for potential updating in the future.
 
-                //This is commented out because it was for testing.  It is being left in code as an example.
+                //I'm being selective in all of the events and only taking tracked events where the type of tracking is Tracked and not Inferred.
 
                 //Check for crosses or uncrossed arms.
                 //if (joints[JointType.WristLeft].TrackingState == JointTrackingState.Tracked &&
@@ -284,10 +321,6 @@ namespace KinectEventWrappers
                         //Populate pixel array.
                         colFrame.CopyPixelDataTo(this.colorPixels);
                     }
-
-                    //Write pixels to the bitmap
-                    //this.colorBitmap.WritePixels(new Int32Rect(0, 0, this.colorBitmap.PixelWidth, this.colorBitmap.PixelHeight), this.colorPixels,
-                    //    this.colorBitmap.PixelWidth * sizeof(int), 0);
                 }
             }
         }
@@ -329,9 +362,6 @@ namespace KinectEventWrappers
                     {
                         depthDisplayPixels = depthBytes;
                     }
-
-                    //Write pixels to the bitmap
-                    //this.depthBitmap.WritePixels(new Int32Rect(0, 0, depthBitmap.PixelWidth, depthBitmap.PixelHeight), depthBytes, depthBitmap.PixelWidth * bytesPerPixel, 0, 0); 
                 }
             }
         }
@@ -376,7 +406,6 @@ namespace KinectEventWrappers
         /// <returns></returns>
         public string GetSkeletonJointsDataAsString()
         {
-            //Extension method used to return the skeleton in a parsable string format.
             return _skel.SkeletonToString();
         }
 
@@ -389,11 +418,15 @@ namespace KinectEventWrappers
             if (this.colorPixels != null)
             {
                 byte[] copyOfColorArray = new byte[this.colorPixels.Length];
-                this.colorPixels.CopyTo(copyOfColorArray, 0);
 
-                //Uncomment to return the rgb array
+                lock (this.colorPixels)
+                {
+                    this.colorPixels.CopyTo(copyOfColorArray, 0);
+                }
+
                 return copyOfColorArray;
 
+                //Sample grayscale code.
                 //int grayScaleBitCount = (int)Math.Floor((decimal)colorPixels.Length / (decimal) 3);
                 //byte[] grayscale = new byte[grayScaleBitCount];
 
@@ -421,7 +454,10 @@ namespace KinectEventWrappers
             if (this.depthDisplayPixels != null)
             {
                 byte[] returnArray = new byte[this.depthDisplayPixels.Length];
-                this.depthDisplayPixels.CopyTo(returnArray, 0);
+                lock (this.depthDisplayPixels)
+                {
+                    this.depthDisplayPixels.CopyTo(returnArray, 0);
+                }
 
                 return returnArray;
             }

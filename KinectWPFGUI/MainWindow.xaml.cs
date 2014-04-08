@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using KinectEventWrappers;
 using KinectProjectControllers;
+using Microsoft.Kinect;
+using WindowsMemoryMappedFileNS;
 
 namespace KinectWPFGUI
 {
@@ -16,10 +18,14 @@ namespace KinectWPFGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string saveFilePath = @"C:\Code\dataFile.txt";
+        #region Declarations
         private WriteableBitmap bmpColor;
         private WriteableBitmap bmpDepth;
         private KinectProjectController kProjCtrlr;
+        private WindowsMemoryMappedFile colorMMF;
+        private WindowsMemoryMappedFile depthMMF;
+        private Timer updateImagesTimer;
+        private long updateIMagesTimerCallbackPeriod = 33;
 
         //Set true for saving data to a file, showing images, displaying extra data in lboxEvents.
         public bool showTestData;
@@ -29,17 +35,28 @@ namespace KinectWPFGUI
 
         //Set true for users placed close to the camera
         public bool closeRange { get; set; }
+        #endregion Declarations
 
         public MainWindow()
         {
-            InitializeComponent();
+            colorMMF = 
+                new WindowsMemoryMappedFile(KinectSettings.Default.ColorMutexName, KinectSettings.Default.ColorMemoryMappedFileName);
+            depthMMF =
+                new WindowsMemoryMappedFile(KinectSettings.Default.DepthMutexName, KinectSettings.Default.DepthMemoryMappedFileName);
 
-            kProjCtrlr = new KinectProjectController(new KinectEventWrapper());
+            //This class does not necessarily need to be used here, but since this GUI is for testing it will remain.
+            kProjCtrlr = new KinectProjectController(
+                    new KinectEventWrapper(ColorImageFormat.RgbResolution640x480Fps30, DepthImageFormat.Resolution640x480Fps30),
+                    colorMMF,
+                    depthMMF);
+
+            updateImagesTimer = new Timer(updateImagesTimer_Callback, null, 0, updateIMagesTimerCallbackPeriod);
+
+            InitializeComponent();
 
             //Subscribe to the closing event to handle unmanaged objects (ie. the KinecSensor)
             Closing += MainWindow_Closing;
 
-            //Initialize booleans set by the GUI
             showTestData = chkboxShowTestData.IsChecked == true;
             sitting = chkboxSeated.IsChecked == true;
             closeRange = chkboxClose.IsChecked == true;
@@ -53,7 +70,7 @@ namespace KinectWPFGUI
             imgDepth.Source = bmpDepth;
         }
 
-        //Toggles setting the sensor between close and far
+        #region Methods
         private void SetCloseFar()
         {
             if (closeRange)
@@ -64,9 +81,10 @@ namespace KinectWPFGUI
             {
                 kProjCtrlr.ReceivedRequest(ReceivedRequestEnum.far);
             }
+
+            closeRange = !closeRange;
         }
 
-        //Toggles sitting/standing.
         private void SetSitStand()
         {
             if (sitting)
@@ -77,16 +95,8 @@ namespace KinectWPFGUI
             {
                 kProjCtrlr.ReceivedRequest(ReceivedRequestEnum.stand);
             }
-        }
 
-        private void btnClose_Click_1(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
-
-        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            kProjCtrlr.Close();
+            sitting = !sitting;
         }
 
         private void LogError(Exception ex)
@@ -107,42 +117,38 @@ namespace KinectWPFGUI
             }
         }
 
-        private void WriteToColorImage(byte[] imageData)
+        private void WriteToColorImage(byte[] imageData, int width, int height)
         {
-            this.Dispatcher.Invoke(new Action(() =>
+            if (imageData.Length > 0)
             {
-                bmpColor.WritePixels(new Int32Rect(0, 0, bmpColor.PixelWidth, bmpColor.PixelHeight), imageData, bmpColor.PixelWidth * sizeof(int), 0);
-            }));
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    bmpColor.WritePixels(new Int32Rect(0, 0, width, height), imageData, width * sizeof(int), 0);
+                }));
+            }
         }
 
-        private void WriteToDepthImage(byte[] imageData)
+        private void WriteToDepthImage(byte[] imageData, int width, int height)
         {
-            this.Dispatcher.Invoke(new Action(() =>
+            if (imageData.Length > 0)
             {
-                bmpDepth.WritePixels(new Int32Rect(0, 0, bmpColor.PixelWidth, bmpColor.PixelHeight), imageData, bmpColor.PixelWidth * sizeof(int), 0);
-            }));
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    bmpDepth.WritePixels(new Int32Rect(0, 0, width, height), imageData, width * sizeof(int), 0);
+                }));
+            }
+        }
+        #endregion Methods
+
+        #region Events
+        private void btnClose_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
 
-        private void WriteFileData(byte[] data)
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            FileInfo fInfo = new FileInfo(saveFilePath);
-
-            DirectoryInfo dInfo = fInfo.Directory;
-
-            if (!dInfo.Exists)
-            {
-                dInfo.Create();
-            }
-
-            if (!fInfo.Exists)
-            {
-                fInfo.Create();
-            }
-
-            using (FileStream fWriter = fInfo.OpenWrite())
-            {
-                fWriter.Write(data, 0, data.Length);
-            }
+            kProjCtrlr.Close();
         }
 
         private void chkboxShowTestData_Checked(object sender, RoutedEventArgs e)
@@ -167,14 +173,29 @@ namespace KinectWPFGUI
 
         private void chkboxClose_Checked(object sender, RoutedEventArgs e)
         {
-            closeRange = true;
             SetCloseFar();
         }
 
         private void chkboxClose_Unchecked(object sender, RoutedEventArgs e)
         {
-            closeRange = false;
             SetCloseFar();
         }
+
+        private void kProjCtrlr_DepthImageChanged(byte[] bitmap, int width, int height)
+        {
+            WriteToDepthImage(bitmap, width, height);
+        }
+
+        private void kProjCtrlr_ColorImageChanged(byte[] bitmap, int width, int height)
+        {
+            WriteToColorImage(bitmap, width, height);
+        }
+
+        private void updateImagesTimer_Callback(Object obj)
+        {
+            WriteToColorImage(colorMMF.ReadFromDataSource(), 640, 480);
+            WriteToDepthImage(depthMMF.ReadFromDataSource(), 640, 480);
+        }
+        #endregion Events
     }
 }

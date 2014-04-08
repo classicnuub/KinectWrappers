@@ -10,7 +10,7 @@ namespace KinectUnitTest
         [TestMethod]
         public void TestInvalidRequest()
         {
-            KinectProjectController kpc = new KinectProjectController(new TestKinectEventWrapper());
+            KinectProjectController kpc = new KinectProjectController(new TestKinectEventWrapper(), new SampleSimpleDataSource(), new SampleSimpleDataSource());
 
             byte[] result = kpc.ReceivedRequest(ReceivedRequestEnum.invalid);
 
@@ -20,7 +20,7 @@ namespace KinectUnitTest
         [TestMethod]
         public void TestSkeletonRequest()
         {
-            KinectProjectController kpc = new KinectProjectController(new TestKinectEventWrapper());
+            KinectProjectController kpc = new KinectProjectController(new TestKinectEventWrapper(), new SampleSimpleDataSource(), new SampleSimpleDataSource());
 
             byte[] result = kpc.ReceivedRequest(ReceivedRequestEnum.skeleton);
 

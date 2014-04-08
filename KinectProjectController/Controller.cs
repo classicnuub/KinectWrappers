@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Configuration;
-using System.IO.MemoryMappedFiles;
 using System.Threading;
-using System.Windows.Media.Imaging;
 using KinectEventWrappers;
-using KinectWPFGUI;
+using SimpleDataSource;
 
 namespace KinectProjectControllers
 {
@@ -12,51 +9,40 @@ namespace KinectProjectControllers
     /// <summary>
     /// The goal of this class is to provide a central place to send and receive information to and from the Kinect Sensor.
     /// </summary>
-    public class KinectProjectController : IKinectProjectController
+    public class KinectProjectController
     {
         #region Declarations
-
         private IKinectEventWrapper kWrapper;
-        private string MemoryMappedFileName;
-        private string MutexName;
-        private MemoryMappedFile mmf;
-        private Mutex mutex;
-        private const long lng = 2458624;
+        private ISimpleDataSource colorDataSource;
+        private ISimpleDataSource depthDataSource;
         private Timer updateTimer;
-        private TimerCallback updateTimerCallback;
         private long timerTick = 10;
-
-        public WriteableBitmap ColorBitmap { get; set; }
-        public WriteableBitmap DepthBitmap { get; set; }
-        public event SendMessage sendMessage;
-        public event SendTextMessage sendErrorMessage;
-        public event EventHandler ColorImageChanged;
-        public event EventHandler DepthImageChanged;
-        public event EventHandler FoundSkeleton;
-
         #endregion Declarations
 
         #region Constructors
-
-        public KinectProjectController(IKinectEventWrapper kinectEventWrapper)
+        public KinectProjectController(IKinectEventWrapper kinectEventWrapper, ISimpleDataSource colorDataSource, ISimpleDataSource depthDataSource)
         {
             kWrapper = kinectEventWrapper;
-
-            //Set event handling for updating the image values.
-            kWrapper.ColorBitmapChanged += new EventHandler(kWrapper_ColorBitmapChanged);
-            kWrapper.DepthBitmapChanged += new EventHandler(kWrapper_DepthBitmapChanged);
-            kWrapper.FoundSkeleton += kWrapper_FoundSkeleton;
+            this.colorDataSource = colorDataSource;
+            this.depthDataSource = depthDataSource;
 
             //Star the Kinect Wrapper class
             kWrapper.Start();
 
-            //Assign a reference to the bitmaps that will be updating on the KinectEventWrapper
-            ColorBitmap = kWrapper.colorBitmap;
-            DepthBitmap = kWrapper.depthBitmap;
+            if (colorDataSource.RequiresLength)
+            {
+                colorDataSource.SetLength(kWrapper.ColorFrameByteLength);
+                colorDataSource.StartDataSource();
+            }
+
+            if (depthDataSource.RequiresLength)
+            {
+                depthDataSource.SetLength(kWrapper.DepthFrameByteLength);
+                depthDataSource.StartDataSource();
+            }
 
             //Start the timer for polling the KinectSensor data
-            updateTimerCallback = updateTimer_Callback;
-            updateTimer = new Timer(updateTimerCallback, null, 0, timerTick);
+            updateTimer = new Timer(updateTimer_Callback, null, 0, timerTick);
         }
         #endregion Constructors
 
@@ -69,22 +55,14 @@ namespace KinectProjectControllers
             if (kWrapper != null)
                 kWrapper.Stop();
 
-            if (mmf != null)
-                mmf.Dispose();
-        }
+            if (colorDataSource != null)
+                colorDataSource.Dispose();
 
-        public byte[] ReceivedRequest(string request)
-        {
-            ReceivedRequestEnum requestEnum = ReceivedRequestEnum.invalid;
-
-            Enum.TryParse<ReceivedRequestEnum>(request, out requestEnum);
-
-            return ReceivedRequest(requestEnum);
+            if (depthDataSource != null)
+                depthDataSource.Dispose();
         }
 
         /// <summary>
-        /// When a request is received, fire the event if it has any subscribers.
-        /// 
         /// Then handle the request and respond.
         /// </summary>
         /// <param name="request"></param>
@@ -156,45 +134,19 @@ namespace KinectProjectControllers
 
             return retValue;
         }
+
+        private void WriteToDataSource(byte[] Data, ISimpleDataSource dataSource)
+        {
+            if (dataSource != null)
+                dataSource.WriteToDataSource(Data);
+        }
         #endregion Methods
 
         #region Events
-        /// <summary>
-        /// When the reference for the color bitmap changes on the kinect event wrapper, get a reference to the
-        /// new object and fire an event notifying the object has been changed.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void kWrapper_ColorBitmapChanged(object sender, EventArgs e)
-        {
-            ColorBitmap = kWrapper.colorBitmap;
-
-            if (ColorImageChanged != null)
-                ColorImageChanged(null, null);
-        }
-
-        /// <summary>
-        /// When the reference for the depth bitmap changes on the kinect event wrapper, get a reference to the
-        /// new object and fire an event notifying the object has been changed.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void kWrapper_DepthBitmapChanged(object sender, EventArgs e)
-        {
-            DepthBitmap = kWrapper.depthBitmap;
-
-            if (DepthImageChanged != null)
-                DepthImageChanged(null, null);
-        }
-
-        void kWrapper_FoundSkeleton(object sender, EventArgs e)
-        {
-            if (FoundSkeleton != null)
-                FoundSkeleton(null, new EventArgs());
-        }
-
         private void updateTimer_Callback(Object obj)
         {
+            colorDataSource.WriteToDataSource(kWrapper.GetColorBytes());
+            depthDataSource.WriteToDataSource(kWrapper.GetDepthBytes());
         }
         #endregion Events
     }

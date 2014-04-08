@@ -12,8 +12,12 @@ namespace KinectEventWrappers
         event EventHandler DepthBitmapChanged;
         event EventHandler FoundSkeleton;
 
-        WriteableBitmap colorBitmap { get; set; }
-        WriteableBitmap depthBitmap { get; set; }
+        int DepthFrameWidth { get; }
+        int DepthFrameHeight { get; }
+        int ColorFrameWidth { get; }
+        int ColorFrameHeight { get; }
+        int ColorFrameByteLength { get; }
+        int DepthFrameByteLength { get; }
         event CrossedArms CrossArms;
         event UnCrossedArms UnCrossArms;
         event RaiseHand RightHandRaised;

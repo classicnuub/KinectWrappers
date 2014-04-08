@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace WindowsMemoryMappedFile
+namespace WindowsMemoryMappedFileNS
 {
     internal class WindowsMutex
     {
@@ -25,17 +25,30 @@ namespace WindowsMemoryMappedFile
 
         public bool LockMutex()
         {
-            return mutex.WaitOne();
+            if (!mutex.SafeWaitHandle.IsClosed)
+                return mutex.WaitOne();
+            else
+                return false;
         }
 
         public bool LockMutex(int waitInMilliseconds)
         {
-            return mutex.WaitOne(waitInMilliseconds);
+            if (!mutex.SafeWaitHandle.IsClosed)
+                return mutex.WaitOne(waitInMilliseconds);
+            else
+                return false;
         }
 
         public void ReleaseMutex()
         {
-            mutex.ReleaseMutex();
+            if (!mutex.SafeWaitHandle.IsClosed)
+                mutex.ReleaseMutex();
+        }
+
+        public void Dispose()
+        {
+            if (mutex != null)
+                mutex.Close();
         }
     }
 }

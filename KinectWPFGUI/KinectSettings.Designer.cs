@@ -25,19 +25,19 @@ namespace KinectWPFGUI {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("kinectData")]
-        public string MemoryMappedFileName {
+        [global::System.Configuration.DefaultSettingValueAttribute("kinectColorData")]
+        public string ColorMemoryMappedFileName {
             get {
-                return ((string)(this["MemoryMappedFileName"]));
+                return ((string)(this["ColorMemoryMappedFileName"]));
             }
         }
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("kinectMutex")]
-        public string MutexName {
+        [global::System.Configuration.DefaultSettingValueAttribute("kinectDepthMutex")]
+        public string DepthMutexName {
             get {
-                return ((string)(this["MutexName"]));
+                return ((string)(this["DepthMutexName"]));
             }
         }
         
@@ -47,6 +47,24 @@ namespace KinectWPFGUI {
         public bool Testing {
             get {
                 return ((bool)(this["Testing"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("kinectDepthData")]
+        public string DepthMemoryMappedFileName {
+            get {
+                return ((string)(this["DepthMemoryMappedFileName"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("kinectColorMutex")]
+        public string ColorMutexName {
+            get {
+                return ((string)(this["ColorMutexName"]));
             }
         }
     }

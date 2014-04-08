@@ -57,7 +57,7 @@
                 <Button x:Name="btnClose"
                         Margin="2"
                         Width="85"
-                        Click="btnClose_Click_1"
+                        Click="btnClose_Click"
                         Content="Close" />
             </StackPanel>
         </Grid>

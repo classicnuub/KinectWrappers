@@ -1,0 +1,21 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="KinectWPFGUI" GeneratedClassName="KinectSettings">
+  <Profiles />
+  <Settings>
+    <Setting Name="ColorMemoryMappedFileName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">kinectColorData</Value>
+    </Setting>
+    <Setting Name="DepthMutexName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">kinectDepthMutex</Value>
+    </Setting>
+    <Setting Name="Testing" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="DepthMemoryMappedFileName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">kinectDepthData</Value>
+    </Setting>
+    <Setting Name="ColorMutexName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">kinectColorMutex</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

@@ -41,28 +41,6 @@ namespace KinectUnitTest
             remove { }
         }
 
-        System.Windows.Media.Imaging.WriteableBitmap IKinectEventWrapper.colorBitmap
-        {
-            get
-            {
-                return new WriteableBitmap(640, 480, 96.0, 96.0, PixelFormats.Bgr32, null);
-            }
-            set
-            {
-            }
-        }
-
-        System.Windows.Media.Imaging.WriteableBitmap IKinectEventWrapper.depthBitmap
-        {
-            get
-            {
-                return new WriteableBitmap(640, 480, 96.0, 96.0, PixelFormats.Bgr32, null);
-            }
-            set
-            {
-            }
-        }
-
         event CrossedArms IKinectEventWrapper.CrossArms
         {
             add { }
@@ -147,6 +125,37 @@ namespace KinectUnitTest
         void IKinectEventWrapper.SetFarDistance()
         {
             return;
+        }
+
+        public int DepthFrameWidth
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public int DepthFrameHeight
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public int ColorFrameWidth
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public int ColorFrameHeight
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+
+        public int ColorFrameByteLength
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public int DepthFrameByteLength
+        {
+            get { throw new NotImplementedException(); }
         }
     }
 }
